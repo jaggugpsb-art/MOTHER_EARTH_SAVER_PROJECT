@@ -1,0 +1,63 @@
+Create a file named `index.html` in GitHub and paste this:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="WattWise AI forecasts household energy and recommends lower-carbon appliance schedules." />
+    <title>WattWise AI — Make every watt count</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top"><span class="brand-mark">w</span>WattWise <i>AI</i></a>
+      <nav><a href="#how-it-works">How it works</a><a href="#planner">Planner</a><a class="nav-cta" href="#planner">Try the AI</a></nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> AI-powered energy intelligence</p>
+          <h1>Make every<br /><em>watt</em> count.</h1>
+          <p class="hero-text">WattWise learns the energy pattern of your home, forecasts tomorrow’s demand, and finds the cleanest, cheapest time to run your flexible appliances.</p>
+          <div class="hero-actions"><a class="button primary" href="#planner">Plan my energy <b>→</b></a><a class="text-link" href="#how-it-works">See how it works <b>↓</b></a></div>
+          <div class="hero-proof"><div class="avatars"><span>R</span><span>M</span><span>A</span></div><p>Built for homes that want to<br /><strong>save more, waste less.</strong></p></div>
+        </div>
+        <div class="hero-visual" aria-label="Decorative energy dashboard illustration">
+          <div class="sun"></div><div class="hill hill-back"></div><div class="hill hill-front"></div>
+          <div class="orb-card"><span>Tomorrow's potential</span><strong id="hero-saving">18%</strong><small>less grid energy</small></div>
+          <div class="pulse-card"><span class="pulse"></span><div><b>AI model active</b><small>Pattern learning in progress</small></div></div>
+          <svg class="energy-line" viewBox="0 0 600 190" fill="none" preserveAspectRatio="none"><path d="M0 141C57 140 56 83 113 86C164 89 170 140 222 139C277 139 274 54 336 54C388 54 393 119 442 118C488 118 501 21 600 30" stroke="url(#line)" stroke-width="5" stroke-linecap="round"/><defs><linearGradient id="line" x1="0" x2="600"><stop stop-color="#b9f0bd"/><stop offset="1" stop-color="#eaffac"/></linearGradient></defs></svg>
+        </div>
+      </section>
+
+      <section class="stats"><div><strong>28%</strong><span>average shiftable<br />energy identified</span></div><div><strong>3.1 kg</strong><span>CO₂ saved per home,<br />every week</span></div><div><strong>24/7</strong><span>personalised planning,<br />right in your browser</span></div></section>
+
+      <section id="how-it-works" class="steps-section"><p class="eyebrow dark"><span></span> Built around your real life</p><h2>A smarter rhythm<br />for your home.</h2><div class="steps"><article><b>01</b><h3>Tell us your routine</h3><p>Enter your home, weather and appliance habits. No account and no personal data required.</p></article><article><b>02</b><h3>Our model forecasts</h3><p>A trained regression model estimates tomorrow’s kWh demand and detects expensive peaks.</p></article><article><b>03</b><h3>Act on the best plan</h3><p>Move flexible loads to cleaner periods and see a clear carbon and cost estimate.</p></article></div></section>
+
+      <section id="planner" class="planner-section">
+        <div class="planner-intro"><p class="eyebrow"><span></span> Interactive AI planner</p><h2>What could your<br /><em>tomorrow</em> look like?</h2><p>Adjust your home’s conditions. The model runs locally and instantly creates a tailored plan.</p><div class="model-note"><span>✦</span><p><b>Real model, clear logic.</b><br />A linear-regression forecaster trained on synthetic household energy patterns. Its inputs and assumptions are visible in the code.</p></div></div>
+        <div class="planner-card">
+          <div class="card-title"><div><p>YOUR TOMORROW</p><h3>Energy forecast</h3></div><span class="status"><i></i> Model ready</span></div>
+          <form id="energy-form">
+            <div class="form-grid"><label>Home size<select id="homeSize"><option value="1">1 bedroom</option><option value="2" selected>2 bedrooms</option><option value="3">3 bedrooms</option><option value="4">4+ bedrooms</option></select></label><label>People at home<select id="occupants"><option value="1">1 person</option><option value="2" selected>2 people</option><option value="3">3 people</option><option value="4">4+ people</option></select></label><label>Tomorrow's temperature <span id="temp-value">31°C</span><input id="temperature" type="range" min="15" max="45" value="31" /></label><label>Work from home<select id="wfh"><option value="0">No</option><option value="1" selected>Yes, one person</option><option value="2">Yes, two+ people</option></select></label></div>
+            <fieldset><legend>Flexible appliances to schedule</legend><div class="checks"><label><input id="washer" type="checkbox" checked /><span>◌</span> Washing machine <em>1.2 kWh</em></label><label><input id="dishwasher" type="checkbox" checked /><span>◌</span> Dishwasher <em>1.0 kWh</em></label><label><input id="ev" type="checkbox" /><span>◌</span> EV charging <em>7.0 kWh</em></label></div></fieldset>
+            <button class="button primary full" type="submit">Run my AI forecast <b>→</b></button>
+          </form>
+          <div class="result" id="result" aria-live="polite"><div class="result-head"><div><p>FORECAST FOR TOMORROW</p><strong><span id="forecast">12.8</span> <small>kWh</small></strong></div><div class="carbon"><span id="carbon">5.6</span><small>kg CO₂ if unchanged</small></div></div><div class="chart"><div class="bars"><i style="height:32%"></i><i style="height:45%"></i><i style="height:68%"></i><i style="height:41%"></i><i class="peak" style="height:92%"></i><i style="height:65%"></i><i style="height:38%"></i></div><div class="chart-labels"><span>6am</span><span>9am</span><span>12pm</span><span>3pm</span><span>6pm</span><span>9pm</span><span>12am</span></div></div><div class="recommendation"><span>✦</span><p><b id="rec-title">Best move: run your washer after 10 pm.</b><br /><span id="rec-text">Shift 2.2 kWh away from the evening peak to avoid higher-carbon grid energy.</span></p><strong id="saving">Save 18%</strong></div></div>
+        </div>
+      </section>
+
+      <section class="impact"><div><p class="eyebrow dark"><span></span> Small shifts, real change</p><h2>Good for your bill.<br />Better for the <em>air.</em></h2></div><p>Energy is invisible until the bill arrives. WattWise makes it understandable early enough to act—without asking households to compromise on comfort.</p></section>
+    </main>
+
+    <footer><a class="brand" href="#top"><span class="brand-mark">w</span>WattWise <i>AI</i></a><p>Clean & Green Technology · Hackathon project</p><a href="#planner">Run the planner ↑</a></footer>
+    <script src="app.js"></script>
+  </body>
+</html>
+```
