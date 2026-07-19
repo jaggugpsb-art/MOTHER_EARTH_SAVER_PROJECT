@@ -1,5 +1,3 @@
-Create a file named `app.js` and paste this:
-
 ```js
 // WattWise's lightweight, inspectable linear model. Coefficients approximate
 // training over household energy patterns (kWh/day), and are deliberately local.
