@@ -1,6 +1,6 @@
 ```js
-// WattWise's lightweight, inspectable linear model. Coefficients approximate
-// training over household energy patterns (kWh/day), and are deliberately local.
+/* WattWise AI: local prediction engine + private IndexedDB plan history. */
+
 const model = {
   bias: 3.4,
   bedrooms: 1.2,
@@ -15,71 +15,164 @@ const appliances = {
   ev: 7.0,
 };
 
-const form = document.querySelector("#energy-form");
-const el = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
+const form = $("energy-form");
 
-function predict() {
-  const beds = Number(el("homeSize").value);
-  const people = Number(el("occupants").value);
-  const temp = Number(el("temperature").value);
-  const wfh = Number(el("wfh").value);
+// Browser database: persists plans locally, requires no key or server.
+const dbRequest = indexedDB.open("wattwise-plans", 1);
+let database;
 
-  // Temperature is centred at 22°C; cooling/heating demand rises away from it.
-  const weatherLoad = Math.abs(temp - 22) * model.temperature;
+dbRequest.onupgradeneeded = (event) => {
+  database = event.target.result;
+
+  const store = database.createObjectStore("plans", {
+    keyPath: "id",
+    autoIncrement: true,
+  });
+
+  store.createIndex("createdAt", "createdAt");
+};
+
+dbRequest.onsuccess = (event) => {
+  database = event.target.result;
+  renderHistory();
+};
+
+dbRequest.onerror = () => {
+  $("history-list").innerHTML =
+    '<p class="empty-state">Private history is unavailable in this browser.</p>';
+};
+
+function getPlan() {
+  const bedrooms = Number($("homeSize").value);
+  const occupants = Number($("occupants").value);
+  const temperature = Number($("temperature").value);
+  const wfh = Number($("wfh").value);
+
+  // Energy demand rises when temperature moves away from 22°C.
+  const weatherLoad = Math.abs(temperature - 22) * model.temperature;
 
   const base =
     model.bias +
-    beds * model.bedrooms +
-    people * model.occupants +
+    bedrooms * model.bedrooms +
+    occupants * model.occupants +
     weatherLoad +
     wfh * model.wfh;
 
-  const selected = Object.entries(appliances).filter(([id]) => el(id).checked);
+  const selected = Object.entries(appliances).filter(([id]) => $(id).checked);
 
-  const flexible = selected.reduce((sum, [, load]) => sum + load, 0);
-  const forecast = base + flexible;
-  const shiftRate = flexible ? Math.min(0.26, 0.09 + flexible * 0.04) : 0;
-  const savedKwh = flexible * shiftRate;
-  const carbon = forecast * 0.44;
-
-  const applianceNames = selected.map(
-    ([id]) =>
-      ({
-        washer: "washer",
-        dishwasher: "dishwasher",
-        ev: "EV charger",
-      })[id],
+  const flexible = selected.reduce(
+    (total, [, load]) => total + load,
+    0,
   );
 
-  const target =
-    applianceNames.length === 0
-      ? "your flexible devices"
-      : applianceNames.length === 1
-        ? `your ${applianceNames[0]}`
-        : "your flexible appliances";
+  const forecast = base + flexible;
+  const rate = flexible ? Math.min(0.26, 0.09 + flexible * 0.04) : 0;
 
-  el("forecast").textContent = forecast.toFixed(1);
-  el("carbon").textContent = carbon.toFixed(1);
-  el("saving").textContent = `${Math.round(shiftRate * 100)}% lower peak impact`;
-  el("hero-saving").textContent = `${Math.max(12, Math.round(shiftRate * 100))}%`;
-
-  el("rec-title").textContent = flexible
-    ? `Best move: run ${target} after 10 pm.`
-    : "Add a flexible appliance to unlock a smart schedule.";
-
-  el("rec-text").textContent = flexible
-    ? `Shift ${flexible.toFixed(1)} kWh away from the 6–9 pm peak. Estimated lower-carbon energy: ${savedKwh.toFixed(1)} kWh.`
-    : "Your essential energy remains forecasted, but there is nothing available to reschedule.";
+  return {
+    forecast,
+    carbon: forecast * 0.44,
+    flexible,
+    rate,
+    savedKwh: flexible * rate,
+    appliances: selected.map(([id]) => id),
+    createdAt: new Date().toISOString(),
+  };
 }
 
-el("temperature").addEventListener("input", (event) => {
-  el("temp-value").textContent = `${event.target.value}°C`;
-});
+function displayPlan(plan) {
+  const names = {
+    washer: "washer",
+    dishwasher: "dishwasher",
+    ev: "EV charger",
+  };
+
+  const chosen = plan.appliances.map((item) => names[item]);
+
+  const target =
+    chosen.length === 0
+      ? "your flexible devices"
+      : chosen.length === 1
+        ? `your ${chosen[0]}`
+        : "your flexible appliances";
+
+  $("forecast").innerHTML = `${plan.forecast.toFixed(1)} <small>kWh</small>`;
+  $("carbon").textContent = plan.carbon.toFixed(1);
+  $("saving").textContent = `${Math.round(plan.rate * 100)}%`;
+
+  $("rec-title").textContent = plan.flexible
+    ? `Best move: run ${target} after 10 pm.`
+    : "Add a flexible appliance to unlock a cleaner schedule.";
+
+  $("rec-text").textContent = plan.flexible
+    ? `Shift ${plan.flexible.toFixed(1)} kWh away from 6–9 pm. Estimated lower-carbon energy: ${plan.savedKwh.toFixed(1)} kWh.`
+    : "Your essential energy is forecasted, but there is no flexible load to move.";
+}
+
+function savePlan(plan) {
+  if (!database) return;
+
+  const transaction = database.transaction("plans", "readwrite");
+  transaction.objectStore("plans").add(plan);
+  transaction.oncomplete = renderHistory;
+}
+
+function renderHistory() {
+  if (!database) return;
+
+  const list = $("history-list");
+  const request = database
+    .transaction("plans", "readonly")
+    .objectStore("plans")
+    .getAll();
+
+  request.onsuccess = () => {
+    const plans = request.result.slice(-4).reverse();
+
+    list.innerHTML = plans.length
+      ? plans
+          .map(
+            (plan) => `
+              <article>
+                <span>${new Date(plan.createdAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}</span>
+                <b>${plan.forecast.toFixed(1)} kWh</b>
+                <small>${plan.carbon.toFixed(1)} kg CO₂ · ${Math.round(plan.rate * 100)}% peak reduction</small>
+              </article>
+            `,
+          )
+          .join("")
+      : '<p class="empty-state">Your saved plans will appear here.</p>';
+  };
+}
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  predict();
+
+  const plan = getPlan();
+
+  displayPlan(plan);
+  savePlan(plan);
+
+  $("result").scrollIntoView({
+    behavior: "smooth",
+    block: "nearest",
+  });
 });
 
-predict();
+$("temperature").addEventListener("input", (event) => {
+  $("temp-value").textContent = `${event.target.value}°`;
+});
+
+$("clear-history").addEventListener("click", () => {
+  if (!database) return;
+
+  const transaction = database.transaction("plans", "readwrite");
+  transaction.objectStore("plans").clear();
+  transaction.oncomplete = renderHistory;
+});
+
+displayPlan(getPlan());
 ```
